@@ -4,7 +4,7 @@
 
 সংক্ষেপে
 ---------
-ZeroIPSpoof একটি সহায়ক রিপোজিটরি যা অনুমোদিত (authorized) পেন-টেস্টিং ও বাগ-বাউন্টি ওয়ার্কফ্লো দ্রুত শুরু করার জন্য টুল ইনস্টলেশন ও নিরাপদ অটোমেশন স্ক্রিপ্ট প্রদান করে। এই প্রোজেক্টটি কোনো WAF/CDN বাইপাস, আইপি-স্পুফিং বা অননুমোদিত এভেশন টেকনিক তৈরি বা চালায় না।
+ZeroIPSpoof একটি সহায়ক রিপোজিটরি যা অনুমোদিত (authorized) পেন-টেস্টিং ও বাগ-বাউন্টি ওয়ার্কফ্লো দ্রুত শুরু করার জন্য টুল ইনস্টলেশন ও নিরাপদ অটোমেশন স্ক্রিপ্ট প্রদান করে। এই প্রোজেক্টটি কোনো WAF/CDN বাইপাস, আইপি-স্পুফিং বা অন্য কোনো অননুমোদিত এভেশন টেকনিক তৈরি বা চালায় না।
 
 সতর্কতা ও লিগ্যাল নোট (অবশ্যক)
 -------------------------------
@@ -21,3 +21,63 @@ ZeroIPSpoof একটি সহায়ক রিপোজিটরি যা �
 ```bash
 chmod +x install.sh
 ./install.sh
+```
+
+Install স্ক্রিপ্টটি চালানোর সময় এটি আপনাকে নিশ্চিতকরণ (Type YES) চাইবে যে আপনার কাছে লিখিত অনুমতি আছে — না থাকলে ইনস্টল বন্ধ হবে।
+
+Run Instructions (Scan Runner)
+-----------------------------
+রিপোতে একটি নিরাপদ স্ক্যান রানার আছে: `tools/run_scans.sh`। এটি অনুমোদিত এনগেজমেন্টে প্রি-কনফিগার করা nmap/proxychains কমান্ডগুলো চালাতে সাহায্য করে এবং আউটপুট স্বয়ংক্রিয়ভাবে লগ করে রাখে।
+
+উদাহরণ:
+
+```bash
+chmod +x tools/run_scans.sh
+# Quick TCP scan using proxychains and an NSE script named "vuln"
+./tools/run_scans.sh --target example.com --mode quick_tcp --script vuln
+
+# HTTP focused vulnerability scan
+./tools/run_scans.sh --target example.com --mode http_vuln
+
+# NTP (UDP) info (requires sudo) — নোট: UDP proxied নয়
+sudo ./tools/run_scans.sh --target 1.2.3.4 --mode ntp_info
+
+# Dry-run (only prints commands)
+./tools/run_scans.sh --target example.com --mode quick_tcp --script vuln --dry-run
+```
+
+Modes (সংক্ষিপ্ত)
+- quick_tcp: proxychains4 nmap -sT -Pn --open --script=<script>
+- vuln_scan: proxychains4 nmap -sS -O -sU --script=vuln (নির্ধারণকৃত সতর্কতা—-sU UDP ব্যবহার করে)
+- slow_vuln: proxychains4 nmap -sT -Pn -T1 --scan-delay 10s --script=vuln
+- http_vuln: proxychains4 nmap -sT -Pn -p 80,443 -T1 --scan-delay 15s --script=http-vuln-static,http-vuln*
+- ntp_info: sudo nmap -sU -p 123 --script=ntp-info (UDP — proxychains দ্বারা proxied নয়)
+
+proxychains ও UDP/ICMP সীমাবদ্ধতা
+---------------------------------
+- `proxychains4` কেবল TCP কানেকশনগুলো proxied করতে পারে; UDP ও ICMP প্যাকেট proxied হবে না।
+- Nmap-এর কিছু সেটিং/স্ক্রিপ্ট (যেমন `-sU` UDP scan, কিছু NSE scripts) TCP ছাড়া UDP/ICMP ব্যবহার করে—এই ক্ষেত্রে proxychains কার্যকর হবে না।
+- UDP/ICMP কভারেজের জন্য সরাসরি `sudo nmap -sU ...` চালাতে হবে (শুধু অনুমোদিত লক্ষ্যবস্তুর উপর)।
+
+আউটপুট লোকেশন ও লেনদেন নোট
+-----------------------------
+- প্রতিটি রান আউটপুট সংরক্ষণ করে: `scans/<target>/<UTC-timestamp>/` (উদাহরণ: `scans/example.com/20260904T123456Z/`).
+- প্রতিটি রান `scan.log` (সমস্ত টার্মিনাল আউটপুট) এবং nmap এর `-oA` আউটপুট ফাইল রাখে।
+
+LICENSE
+-------
+এই রিপোতে এখনো LICENSE ফাইল নেই। অফিসিয়ালি প্রকাশ করার আগে একটি লাইসেন্স নির্বাচন করুন (যেমন MIT বা Apache-2.0) — আমি প্রয়োজনে LICENSE ফাইল যোগ করতে সাহায্য করব।
+
+CONTRIBUTING / RULES OF ENGAGEMENT
+----------------------------------
+- এই রিপোতে `CONTRIBUTING.md` এবং `RULES_OF_ENGAGEMENT.md` টেমপ্লেট যোগ করা আছে।
+- কোনও কোড যেখানে স্বয়ংক্রিয়ভাবে এভেশন, স্পুফিং বা বাইপাসিং কার্যকারিতা যোগ করবে তা স্বীকৃতভাবে মেনে নেওয়া হবে না — যদি বৈধ প্রয়োজনে কিছু প্রয়োগ করতে হয়, maintainers-কে পূর্ব অনুমতি দিয়ে ROE সংযুক্ত করতে হবে।
+
+আরও নির্দেশনা ও সাহায্য
+----------------------
+- আমি কোনো WAF/CDN বাইপাস, IP স্পুফিং বা অননুমোদিত এভেশন অটোমেশন এখানে যোগ করিনি এবং ভবিষ্যতেও যোগ করব না।
+- যদি আপনি চান, আমি Dockerfile, CI লিন্টিং স্ক্রিপ্ট বা অতিরিক্ত ডকুমেন্টেশন যোগ করে দিতে পারি — বলুন, আমি যোগ করে দেব।
+
+---
+
+প্রশ্ন বা অনুরোধ থাকলে ইস্যু খুলুন বা PR পাঠান।
