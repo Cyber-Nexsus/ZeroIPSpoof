@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
 # name=tools/run_scans.sh
 # Safe scan runner for authorized engagements.
 # Usage examples:
