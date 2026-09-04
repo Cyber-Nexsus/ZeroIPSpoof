@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
 # name=install.sh
 # Safe installer for common, authorized penetration-testing tools
 # Purpose: Install tools on a Debian/Ubuntu/Kali-based system for use in authorized security testing only.
 # IMPORTANT: This script intentionally does NOT include or automate any techniques to bypass
 #          security controls (CDNs, WAFs, rate-limits) or to perform IP spoofing/evasion.
-#          Those activities can be illegal or unethical without explicit scope and tooling
-#          supervision. Use only with explicit, written authorization and follow rules of engagement.
+#          Use only with explicit, written authorization and follow rules of engagement.
 
 set -euo pipefail
 
@@ -40,14 +40,15 @@ if [ -f /etc/debian_version ]; then
     hping3 \
     proxychains4 \
     masscan \
-    sqlmap \\
+    sqlmap \
     nikto \
+    gobuster \
     netcat-openbsd \
     tcpdump \
     curl \
     wget \
     jq \
-    whois \\n    gobuster || {
+    whois || {
       echo "Some packages may have failed to install. Please inspect apt output." >&2
     }
 
@@ -80,6 +81,6 @@ Recommended next steps:
 
 EOF
 
-chmod +x "$REPO_ROOT_DIR/INSTALL_NOTICE.txt" || true
+chmod 644 "$REPO_ROOT_DIR/INSTALL_NOTICE.txt" || true
 
 echo "Installation complete. See INSTALL_NOTICE.txt in the repository for safety guidance."
